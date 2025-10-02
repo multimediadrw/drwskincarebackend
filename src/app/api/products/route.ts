@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Get products
     const products = await prisma.produk.findMany({
       include: {
         produk_detail: true,
@@ -11,32 +12,98 @@ export async function GET() {
           include: {
             bahan_aktif: true
           }
+        },
+        produk_kategori: {
+          include: {
+            kategori: true
+          }
         }
       },
       orderBy: {
         created_at: 'desc'
-      }    });
+      }
+    });
 
-    // Convert BigInt to string for JSON serialization
-    const serializedProducts = products.map(product => ({
+    // Get paket_produk
+    const paketProduk = await prisma.paket_produk.findMany({
+      include: {
+        paket_isi: {
+          include: {
+            produk: true
+          }
+        },
+        paket_kategori: {
+          include: {
+            kategori: true
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    // Convert BigInt to string for JSON serialization - Products
+    const serializedProducts = products.map((product: any) => ({
       ...product,
+      type: 'produk', // Add type identifier
       id_produk: product.id_produk.toString(),
-      foto_produk: product.foto_produk.map(foto => ({
+      foto_produk: product.foto_produk.map((foto: any) => ({
         ...foto,
         id_foto: foto.id_foto.toString(),
         produk_id: foto.produk_id.toString()
       })),
-      produk_bahan_aktif: product.produk_bahan_aktif.map(pba => ({
+      produk_bahan_aktif: product.produk_bahan_aktif.map((pba: any) => ({
         ...pba,
         produk_id: pba.produk_id.toString()
       })),
       produk_detail: product.produk_detail ? {
         ...product.produk_detail,
         produk_id: product.produk_detail.produk_id.toString()
-      } : null
+      } : null,
+      // Include kategori data
+      produk_kategori: product.produk_kategori ? product.produk_kategori.map((pk: any) => ({
+        ...pk,
+        produk_id: pk.produk_id.toString(),
+        kategori_id: pk.kategori_id
+      })) : []
     }));
 
-    return NextResponse.json(serializedProducts);
+    // Convert BigInt to string for JSON serialization - Paket Produk
+    const serializedPaketProduk = paketProduk.map((paket: any) => ({
+      ...paket,
+      type: 'paket', // Add type identifier
+      id_produk: paket.id_paket.toString(), // Use id_paket as id_produk for consistency
+      nama_produk: paket.nama_paket, // Use nama_paket as nama_produk for consistency
+      id_paket: paket.id_paket.toString(),
+      paket_isi: paket.paket_isi.map((isi: any) => ({
+        ...isi,
+        paket_id: isi.paket_id.toString(),
+        produk_id: isi.produk_id.toString(),
+        produk: {
+          ...isi.produk,
+          id_produk: isi.produk.id_produk.toString()
+        }
+      })),
+      // Add empty arrays for consistency with produk structure
+      foto_produk: [],
+      produk_bahan_aktif: [],
+      produk_detail: null,
+      produk_kategori: [],
+      paket_kategori: paket.paket_kategori ? paket.paket_kategori.map((pk: any) => ({
+        ...pk,
+        paket_id: pk.paket_id.toString(),
+        kategori_id: pk.kategori_id
+      })) : []
+    }));
+
+    // Combine both products and paket_produk
+    const allItems = [...serializedProducts, ...serializedPaketProduk];
+
+    // Debug log to check kategori data
+    console.log('Sample item with kategori:', JSON.stringify(allItems[0], null, 2));
+
+    return NextResponse.json(allItems);
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
