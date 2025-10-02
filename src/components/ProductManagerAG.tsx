@@ -18,6 +18,7 @@ interface BahanAktif {
 
 interface ProdukBahanAktif {
   bahan_aktif: BahanAktif;
+  fungsi?: string | null;
 }
 
 interface ProdukDetail {
@@ -102,12 +103,12 @@ const BahanAktifRenderer = (params: any) => {
   return (
     <div className="flex flex-wrap gap-1 py-1">
       {bahanAktif.map((item: ProdukBahanAktif, idx: number) => (
-        <span
-          key={idx}
-          className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
-        >
-          {item.bahan_aktif.nama_bahan}
-        </span>
+        <div key={idx} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-1">
+          <div className="font-semibold">{item.bahan_aktif.nama_bahan}</div>
+          {item.fungsi && (
+            <div className="text-blue-600 text-xs mt-1 italic">Fungsi: {item.fungsi}</div>
+          )}
+        </div>
       ))}
     </div>
   );
