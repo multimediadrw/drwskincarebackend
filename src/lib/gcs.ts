@@ -1,43 +1,67 @@
 import { Storage } from '@google-cloud/storage';
 
-// Initialize storage with key file approach
-let storage: Storage;
-let bucket: any; // TODO: Import proper Bucket type from @google-cloud/storage
+// Lazy initialization variables
+let storage: Storage | null = null;
+let bucket: any = null; // TODO: Import proper Bucket type from @google-cloud/storage
 
-try {
-  console.log('Initializing Google Cloud Storage...');
-  console.log('Project ID:', process.env.GOOGLE_CLOUD_PROJECT_ID);
-  console.log('Bucket Name:', process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
-
-  // Try key file approach first
-  try {
-    storage = new Storage({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-      keyFilename: './gcs-key.json',
-    });
-    console.log('Using key file authentication');
-  } catch (keyFileError) {
-    console.warn('Key file authentication failed, trying environment variables:', keyFileError);
-    
-    // Fallback to environment variables
-    storage = new Storage({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-      credentials: {
-        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      },
-    });
-    console.log('Using environment variables authentication');
+// Lazy initialization function
+function initializeGCS() {
+  if (storage && bucket) {
+    return { storage, bucket };
   }
 
-  bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET!);
-  console.log('Google Cloud Storage initialized successfully');
-} catch (initError) {
-  console.error('Failed to initialize Google Cloud Storage:', initError);
-  throw new Error('Google Cloud Storage initialization failed');
+  // Check if required environment variables are available
+  if (!process.env.GOOGLE_CLOUD_PROJECT_ID || !process.env.GOOGLE_CLOUD_STORAGE_BUCKET) {
+    console.warn('Google Cloud Storage environment variables not available, skipping initialization');
+    return { storage: null, bucket: null };
+  }
+
+  try {
+    console.log('Initializing Google Cloud Storage...');
+    console.log('Project ID:', process.env.GOOGLE_CLOUD_PROJECT_ID);
+    console.log('Bucket Name:', process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
+
+    // Try key file approach first
+    try {
+      storage = new Storage({
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+        keyFilename: './gcs-key.json',
+      });
+      console.log('Using key file authentication');
+    } catch (keyFileError) {
+      console.warn('Key file authentication failed, trying environment variables:', keyFileError);
+      
+      // Fallback to environment variables
+      storage = new Storage({
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+        credentials: {
+          client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+          private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        },
+      });
+      console.log('Using environment variables authentication');
+    }
+
+    bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET!);
+    console.log('Google Cloud Storage initialized successfully');
+    
+    return { storage, bucket };
+  } catch (initError) {
+    console.error('Failed to initialize Google Cloud Storage:', initError);
+    return { storage: null, bucket: null };
+  }
 }
 
-export { storage, bucket };
+// Export functions that handle lazy initialization
+export function getStorage() {
+  const { storage } = initializeGCS();
+  return storage;
+}
+
+export function getBucket() {
+  const { bucket } = initializeGCS();
+  return bucket;
+}
 
 // Test function to verify GCS connection
 export async function testGCSConnection(): Promise<{ canAuthenticate: boolean; canListBuckets: boolean; availableBuckets: string[]; targetBucketExists: boolean; errors: string[] }> {
@@ -51,6 +75,14 @@ export async function testGCSConnection(): Promise<{ canAuthenticate: boolean; c
 
   try {
     console.log('Step 1: Testing basic authentication...');
+    
+    const storage = getStorage();
+    const bucket = getBucket();
+    
+    if (!storage || !bucket) {
+      result.errors.push('Google Cloud Storage not initialized - missing environment variables');
+      return result;
+    }
     
     // Test basic authentication by getting project info
     try {
@@ -145,6 +177,12 @@ export async function uploadProductPhoto(
 export async function deleteProductPhoto(fileName: string): Promise<void> {
   try {
     console.log('Attempting to delete file from GCS:', fileName);
+    
+    const bucket = getBucket();
+    if (!bucket) {
+      throw new Error('Google Cloud Storage not initialized - missing environment variables');
+    }
+    
     await bucket.file(fileName).delete();
     console.log('File deleted successfully from GCS:', fileName);
   } catch (error: unknown) {
@@ -175,6 +213,11 @@ export const uploadToGCS = async (
     console.log(`Uploading file: ${fileName}, size: ${file.length} bytes, type: ${contentType}`);
     console.log('GCS Bucket:', process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
     console.log('GCS Project ID:', process.env.GOOGLE_CLOUD_PROJECT_ID);
+    
+    const bucket = getBucket();
+    if (!bucket) {
+      throw new Error('Google Cloud Storage not initialized - missing environment variables');
+    }
     
     // Test bucket access first
     try {
@@ -241,6 +284,11 @@ export const uploadToGCS = async (
 
 export const deleteFromGCS = async (fileName: string): Promise<void> => {
   try {
+    const bucket = getBucket();
+    if (!bucket) {
+      throw new Error('Google Cloud Storage not initialized - missing environment variables');
+    }
+    
     await bucket.file(fileName).delete();
   } catch (error) {
     console.error('Delete error:', error);
