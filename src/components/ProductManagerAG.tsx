@@ -128,14 +128,8 @@ const FotoUploadRenderer = (params: any) => {
   const urutan = params.colDef.field === 'foto1' ? 1 : params.colDef.field === 'foto2' ? 2 : 3;
   const existingPhoto = params.data.foto_produk?.find((foto: any) => foto.urutan === urutan);
 
-  // Only allow photo upload for products, not packages
-  if (itemType === 'paket') {
-    return (
-      <div className="w-12 h-12 mx-auto flex items-center justify-center text-gray-400 text-xs">
-        N/A
-      </div>
-    );
-  }
+  // Allow photo upload for both products and packages
+  // Packages are treated the same as products in terms of photo management
   
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -155,6 +149,7 @@ const FotoUploadRenderer = (params: any) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('productId', productId);
+    formData.append('itemType', itemType); // Send item type (produk/paket)
     formData.append('urutan', urutan.toString());
     formData.append('altText', `Foto ${urutan}`);
 
@@ -244,7 +239,38 @@ const DateRenderer = (params: any) => {
   return new Date(params.value).toLocaleDateString('id-ID');
 };
 
-
+// Foto Utama (F0) Renderer
+const FotoUtamaRenderer = (params: any) => {
+  const fotoUtama = params.data.foto_utama;
+  const itemType = params.data.type;
+  
+  if (!fotoUtama) {
+    return (
+      <div className="w-12 h-12 mx-auto flex items-center justify-center text-gray-400 text-xs bg-gray-100 rounded">
+        {itemType === 'paket' ? 'Paket' : 'No Img'}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="w-12 h-12 mx-auto relative">
+      <img
+        src={fotoUtama}
+        alt={itemType === 'paket' ? 'Foto Produk dalam Paket' : 'Foto Utama'}
+        className="w-12 h-12 object-cover rounded border"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="%23ccc"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>';
+        }}
+      />
+      {itemType === 'paket' && (
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white rounded-full text-xs flex items-center justify-center font-bold">
+          P
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function ProductManagerAG() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -299,7 +325,8 @@ export default function ProductManagerAG() {
 
     try {
       const updateData: any = {
-        id_produk: data.id_produk
+        id_produk: data.id_produk,
+        type: data.type // Add type to identify if it's produk or paket
       };
 
       // Map AG Grid fields back to API fields
@@ -565,6 +592,15 @@ export default function ProductManagerAG() {
         );
       },
       editable: false
+    },
+    {
+      field: 'foto_utama',
+      headerName: 'F0',
+      width: 80,
+      cellRenderer: FotoUtamaRenderer,
+      editable: false,
+      sortable: false,
+      filter: false
     },
     {
       field: 'foto1',

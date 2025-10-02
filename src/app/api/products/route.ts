@@ -25,11 +25,18 @@ export async function GET() {
     });
 
     // Get paket_produk
-    const paketProduk = await prisma.paket_produk.findMany({
+    const paketProduk = await (prisma as any).paket_produk.findMany({
       include: {
+        foto_produk: true, // Include foto_produk for packages
         paket_isi: {
           include: {
-            produk: true
+            produk: {
+              select: {
+                id_produk: true,
+                nama_produk: true,
+                foto_utama: true
+              }
+            }
           }
         },
         paket_kategori: {
@@ -85,8 +92,15 @@ export async function GET() {
           id_produk: isi.produk.id_produk.toString()
         }
       })),
-      // Add empty arrays for consistency with produk structure
-      foto_produk: [],
+      // Use foto_utama directly from paket_produk table
+      foto_utama: paket.foto_utama,
+      // Serialize foto_produk for paket (with paket_id instead of produk_id)
+      foto_produk: paket.foto_produk ? paket.foto_produk.map((foto: any) => ({
+        ...foto,
+        id_foto: foto.id_foto.toString(),
+        paket_id: foto.paket_id ? foto.paket_id.toString() : null,
+        produk_id: foto.produk_id ? foto.produk_id.toString() : null
+      })) : [],
       produk_bahan_aktif: [],
       produk_detail: null,
       produk_kategori: [],
@@ -116,7 +130,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const requestData = await request.json();
-    const { id_produk, kegunaan, komposisi, cara_pakai, netto, no_bpom, ...updateData } = requestData;
+    const { id_produk, type, kegunaan, komposisi, cara_pakai, netto, no_bpom, ...updateData } = requestData;
     
     // Only include valid product fields
     const validProductFields = {
@@ -139,11 +153,32 @@ export async function PUT(request: Request) {
       }
     });
 
-    // Update main product data
-    await prisma.produk.update({
-      where: { id_produk: BigInt(id_produk) },
-      data: cleanProductData
-    });    // Update or create product detail if detail fields are provided
+    // Check if this is a paket or produk
+    if (type === 'paket') {
+      // Map fields for paket_produk
+      const paketData: Record<string, unknown> = {};
+      Object.entries(cleanProductData).forEach(([key, value]) => {
+        if (key === 'nama_produk') {
+          paketData['nama_paket'] = value;
+        } else if (key === 'deskripsi_singkat') {
+          paketData['deskripsi'] = value;
+        } else {
+          paketData[key] = value;
+        }
+      });
+
+      // Update paket_produk
+      await (prisma as any).paket_produk.update({
+        where: { id_paket: BigInt(id_produk) },
+        data: paketData
+      });
+    } else {
+      // Update main product data
+      await prisma.produk.update({
+        where: { id_produk: BigInt(id_produk) },
+        data: cleanProductData
+      });
+    }    // Update or create product detail if detail fields are provided
     if (kegunaan !== undefined || komposisi !== undefined || cara_pakai !== undefined || netto !== undefined || no_bpom !== undefined) {
       const detailData = {
         kegunaan: kegunaan || null,

@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const productId = formData.get('productId') as string;
+    const itemType = formData.get('itemType') as string || 'produk'; // 'produk' or 'paket'
     const urutan = parseInt(formData.get('urutan') as string) || 1;
     const altText = formData.get('altText') as string || '';
 
@@ -68,21 +69,29 @@ export async function POST(request: NextRequest) {
     // Upload to Google Cloud Storage
     const publicUrl = await uploadToGCS(processedBuffer, fileName, actualContentType);
 
-    // Save to database
-    const fotoData = await prisma.foto_produk.create({
-      data: {
-        produk_id: BigInt(productId),
-        url_foto: publicUrl,
-        alt_text: altText,
-        urutan: urutan,
-      },
+    // Save to database - determine if it's produk or paket
+    const createData: any = {
+      url_foto: publicUrl,
+      alt_text: altText,
+      urutan: urutan,
+    };
+
+    if (itemType === 'paket') {
+      createData.paket_id = BigInt(productId);
+    } else {
+      createData.produk_id = BigInt(productId);
+    }
+
+    const fotoData = await (prisma as any).foto_produk.create({
+      data: createData,
     });
 
     // Convert BigInt to string for JSON response
     const response = {
       ...fotoData,
       id_foto: fotoData.id_foto.toString(),
-      produk_id: fotoData.produk_id.toString(),
+      produk_id: fotoData.produk_id ? fotoData.produk_id.toString() : null,
+      paket_id: fotoData.paket_id ? fotoData.paket_id.toString() : null,
     };
 
     return NextResponse.json(response);

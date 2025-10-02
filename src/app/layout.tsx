@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kelola Produk DRW - Admin Dashboard",
   description: "Sistem manajemen produk dan paket produk DRW Skincare",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
