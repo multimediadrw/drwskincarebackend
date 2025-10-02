@@ -25,8 +25,8 @@ export async function DELETE(
         // Try to delete from Google Cloud Storage
         await deleteProductPhoto(fileName);
         console.log('File deleted from GCS successfully:', fileName);
-      } catch (gcsError: any) {
-        if (gcsError.message === 'FILE_NOT_FOUND') {
+      } catch (gcsError: unknown) {
+        if (gcsError instanceof Error && gcsError.message === 'FILE_NOT_FOUND') {
           console.warn('File not found in GCS (might already be deleted):', fileName);
         } else {
           console.error('Unexpected GCS error:', gcsError);

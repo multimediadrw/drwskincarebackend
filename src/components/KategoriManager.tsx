@@ -18,7 +18,7 @@ interface Kategori {
 }
 
 // Action Cell Renderer untuk tombol hapus
-const ActionCellRenderer = (props: any) => {
+const ActionCellRenderer = (props: { data: { id: number; nama_kategori: string }; context: { refreshData: () => void } }) => {
   const handleDelete = async () => {
     if (confirm(`Apakah Anda yakin ingin menghapus kategori "${props.data.nama_kategori}"?`)) {
       try {

@@ -2,7 +2,7 @@ import { Storage } from '@google-cloud/storage';
 
 // Initialize storage with key file approach
 let storage: Storage;
-let bucket: any;
+let bucket: any; // TODO: Import proper Bucket type from @google-cloud/storage
 
 try {
   console.log('Initializing Google Cloud Storage...');
@@ -40,7 +40,7 @@ try {
 export { storage, bucket };
 
 // Test function to verify GCS connection
-export async function testGCSConnection(): Promise<any> {
+export async function testGCSConnection(): Promise<{ canAuthenticate: boolean; canListBuckets: boolean; availableBuckets: string[]; targetBucketExists: boolean; errors: string[] }> {
   const result = {
     canAuthenticate: false,
     canListBuckets: false,
@@ -147,11 +147,11 @@ export async function deleteProductPhoto(fileName: string): Promise<void> {
     console.log('Attempting to delete file from GCS:', fileName);
     await bucket.file(fileName).delete();
     console.log('File deleted successfully from GCS:', fileName);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting file from GCS:', error);
     
     // If file doesn't exist (404), don't throw error
-    if (error.code === 404) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 404) {
       console.warn('File not found in GCS (404):', fileName);
       throw new Error('FILE_NOT_FOUND');
     }

@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const response = {
       ...fotoData,
       id_foto: fotoData.id_foto.toString(),
-      produk_id: fotoData.produk_id.toString(),
+      produk_id: fotoData.produk_id ? fotoData.produk_id.toString() : null,
     };
 
     return NextResponse.json(response);

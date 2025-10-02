@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const produkKategori = await (prisma as any).produk_kategori.create({
+    const produkKategori = await prisma.produk_kategori.create({
       data: {
         produk_id: BigInt(produk_id),
         kategori_id: parseInt(kategori_id)
@@ -23,11 +23,11 @@ export async function POST(request: NextRequest) {
       ...produkKategori,
       produk_id: produkKategori.produk_id.toString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating produk kategori:', error);
     
     // Handle unique constraint violation
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Kategori sudah ditambahkan ke produk ini' },
         { status: 409 }
@@ -52,7 +52,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await (prisma as any).produk_kategori.delete({
+    await prisma.produk_kategori.delete({
       where: {
         produk_id_kategori_id: {
           produk_id: BigInt(produk_id),
@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json({ message: 'Kategori berhasil dihapus' });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting produk kategori:', error);
     return NextResponse.json(
       { error: 'Gagal menghapus kategori' },

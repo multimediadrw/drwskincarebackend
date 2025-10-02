@@ -32,7 +32,7 @@ export async function GET(
       foto_produk: product.foto_produk.map(foto => ({
         ...foto,
         id_foto: foto.id_foto.toString(),
-        produk_id: foto.produk_id.toString(),
+        produk_id: foto.produk_id ? foto.produk_id.toString() : null,
       })),
     };
 

@@ -14,15 +14,15 @@ model bahan_aktif {
 }
 
 model foto_produk {
-  id_foto    BigInt        @id @default(autoincrement())
-  produk_id  BigInt?       // Make nullable to support paket_produk
-  paket_id   BigInt?       // Add paket_id field
-  url_foto   String
-  alt_text   String?       @db.VarChar(255)
-  urutan     Int           @default(0)
-  created_at DateTime      @default(now()) @db.Timestamptz(6)
-  produk     produk?       @relation(fields: [produk_id], references: [id_produk], onDelete: Cascade, onUpdate: NoAction, map: "fk_produk")
+  id_foto      BigInt        @id @default(autoincrement())
+  produk_id    BigInt?
+  url_foto     String
+  alt_text     String?       @db.VarChar(255)
+  urutan       Int           @default(0)
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  paket_id     BigInt?
   paket_produk paket_produk? @relation(fields: [paket_id], references: [id_paket], onDelete: Cascade, onUpdate: NoAction, map: "fk_paket")
+  produk       produk?       @relation(fields: [produk_id], references: [id_produk], onDelete: Cascade, onUpdate: NoAction, map: "fk_produk")
 }
 
 model paket_isi {
@@ -48,9 +48,9 @@ model paket_produk {
   harga_umum       Int              @default(0)
   created_at       DateTime         @default(now()) @db.Timestamptz(6)
   updated_at       DateTime         @default(now()) @db.Timestamptz(6)
+  foto_produk      foto_produk[]
   paket_isi        paket_isi[]
   paket_kategori   paket_kategori[]
-  foto_produk      foto_produk[]    // Add foto_produk relation
 }
 
 model produk {

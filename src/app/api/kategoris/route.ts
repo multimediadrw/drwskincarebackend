@@ -3,14 +3,14 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const kategoris = await (prisma as any).kategori.findMany({
+    const kategoris = await prisma.kategori.findMany({
       orderBy: {
         nama_kategori: 'asc'
       }
     });
 
     return NextResponse.json(kategoris);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching kategoris:', error);
     return NextResponse.json(
       { error: 'Gagal mengambil data kategori' },
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const kategori = await (prisma as any).kategori.create({
+    const kategori = await prisma.kategori.create({
       data: {
         nama_kategori: nama.trim(),
         deskripsi: deskripsi?.trim() || null
@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(kategori);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating kategori:', error);
     
     // Handle unique constraint violation
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Nama kategori sudah ada' },
         { status: 409 }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: 'Gagal menambah kategori' },
+      { error: 'Gagal membuat kategori' },
       { status: 500 }
     );
   }

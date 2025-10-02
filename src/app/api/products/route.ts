@@ -25,7 +25,7 @@ export async function GET() {
     });
 
     // Get paket_produk
-    const paketProduk = await (prisma as any).paket_produk.findMany({
+    const paketProduk = await prisma.paket_produk.findMany({
       include: {
         foto_produk: true, // Include foto_produk for packages
         paket_isi: {
@@ -51,7 +51,7 @@ export async function GET() {
     });
 
     // Convert BigInt to string for JSON serialization - Products
-    const serializedProducts = products.map((product: any) => ({
+    const serializedProducts = (products as any[]).map((product: any) => ({
       ...product,
       type: 'produk', // Add type identifier
       id_produk: product.id_produk.toString(),
@@ -77,7 +77,7 @@ export async function GET() {
     }));
 
     // Convert BigInt to string for JSON serialization - Paket Produk
-    const serializedPaketProduk = paketProduk.map((paket: any) => ({
+    const serializedPaket = (paketProduk as any[]).map((paket: any) => ({
       ...paket,
       type: 'paket', // Add type identifier
       id_produk: paket.id_paket.toString(), // Use id_paket as id_produk for consistency
@@ -92,27 +92,25 @@ export async function GET() {
           id_produk: isi.produk.id_produk.toString()
         }
       })),
-      // Use foto_utama directly from paket_produk table
       foto_utama: paket.foto_utama,
-      // Serialize foto_produk for paket (with paket_id instead of produk_id)
-      foto_produk: paket.foto_produk ? paket.foto_produk.map((foto: any) => ({
+      foto_produk: paket.foto_produk?.map((foto: any) => ({
         ...foto,
         id_foto: foto.id_foto.toString(),
         paket_id: foto.paket_id ? foto.paket_id.toString() : null,
         produk_id: foto.produk_id ? foto.produk_id.toString() : null
-      })) : [],
+      })) || [],
       produk_bahan_aktif: [],
       produk_detail: null,
       produk_kategori: [],
-      paket_kategori: paket.paket_kategori ? paket.paket_kategori.map((pk: any) => ({
+      paket_kategori: paket.paket_kategori?.map((pk: any) => ({
         ...pk,
         paket_id: pk.paket_id.toString(),
         kategori_id: pk.kategori_id
-      })) : []
+      })) || []
     }));
 
     // Combine both products and paket_produk
-    const allItems = [...serializedProducts, ...serializedPaketProduk];
+    const allItems = [...serializedProducts, ...serializedPaket];
 
     // Debug log to check kategori data
     console.log('Sample item with kategori:', JSON.stringify(allItems[0], null, 2));

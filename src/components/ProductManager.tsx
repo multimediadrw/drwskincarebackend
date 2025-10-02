@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import { ColDef, CellValueChangedEvent, GridReadyEvent } from 'ag-grid-community';
+import { useState, useEffect } from 'react';
 
 // Import AG Grid styles
 import 'ag-grid-community/styles/ag-grid.css';

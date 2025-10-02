@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const publicUrl = await uploadToGCS(processedBuffer, fileName, actualContentType);
 
     // Save to database - determine if it's produk or paket
-    const createData: any = {
+    const createData: { url_foto: string; alt_text?: string; urutan?: number; paket_id?: bigint; produk_id?: bigint } = {
       url_foto: publicUrl,
       alt_text: altText,
       urutan: urutan,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       createData.produk_id = BigInt(productId);
     }
 
-    const fotoData = await (prisma as any).foto_produk.create({
+    const fotoData = await prisma.foto_produk.create({
       data: createData,
     });
 

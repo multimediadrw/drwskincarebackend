@@ -17,27 +17,27 @@ export async function PUT(
       );
     }
 
-    const updateData: any = {};
+    const updateData: { nama_kategori?: string; deskripsi?: string | null } = {};
     if (nama !== undefined) updateData.nama_kategori = nama.trim();
     if (deskripsi !== undefined) updateData.deskripsi = deskripsi?.trim() || null;
 
-    const kategori = await (prisma as any).kategori.update({
+    const kategori = await prisma.kategori.update({
       where: { id },
       data: updateData
     });
 
     return NextResponse.json(kategori);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating kategori:', error);
     
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Kategori tidak ditemukan' },
         { status: 404 }
       );
     }
     
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Nama kategori sudah ada' },
         { status: 409 }
@@ -68,10 +68,10 @@ export async function DELETE(
 
     // Check if kategori is being used by products or packages
     const [produkCount, paketCount] = await Promise.all([
-      (prisma as any).produk_kategori.count({
+      prisma.produk_kategori.count({
         where: { kategori_id: id }
       }),
-      (prisma as any).paket_kategori.count({
+      prisma.paket_kategori.count({
         where: { kategori_id: id }
       })
     ]);
@@ -83,15 +83,15 @@ export async function DELETE(
       );
     }
 
-    await (prisma as any).kategori.delete({
+    await prisma.kategori.delete({
       where: { id }
     });
 
     return NextResponse.json({ message: 'Kategori berhasil dihapus' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting kategori:', error);
     
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Kategori tidak ditemukan' },
         { status: 404 }
