@@ -126,7 +126,7 @@ const FotoCountRenderer = (params: any) => {
 const FotoUploadRenderer = (params: any) => {
   const productId = params.data.id_produk;
   const itemType = params.data.type;
-  const urutan = params.colDef.field === 'foto1' ? 1 : params.colDef.field === 'foto2' ? 2 : 3;
+  const urutan = params.colDef.field === 'foto1' ? 0 : params.colDef.field === 'foto2' ? 1 : 2;
   const existingPhoto = params.data.foto_produk?.find((foto: any) => foto.urutan === urutan);
 
   // Allow photo upload for both products and packages
@@ -152,7 +152,7 @@ const FotoUploadRenderer = (params: any) => {
     formData.append('productId', productId);
     formData.append('itemType', itemType); // Send item type (produk/paket)
     formData.append('urutan', urutan.toString());
-    formData.append('altText', `Foto ${urutan}`);
+    formData.append('altText', `Foto ${urutan + 1}`);
 
     try {
       const response = await fetch('/api/upload-photo', {
@@ -180,7 +180,7 @@ const FotoUploadRenderer = (params: any) => {
     
     if (!existingPhoto) return;
     
-    if (!confirm(`Yakin ingin menghapus foto ${urutan}?`)) return;
+    if (!confirm(`Yakin ingin menghapus foto ${urutan + 1}?`)) return;
 
     try {
       const response = await fetch(`/api/delete-photo/${existingPhoto.id_foto}`, {
@@ -205,7 +205,7 @@ const FotoUploadRenderer = (params: any) => {
         <>
           <img
             src={existingPhoto.url_foto}
-            alt={`Foto ${urutan}`}
+            alt={`Foto ${urutan + 1}`}
             className="w-12 h-12 object-cover rounded border"
           />
           {/* Delete button - tampil saat hover */}
@@ -227,7 +227,7 @@ const FotoUploadRenderer = (params: any) => {
             accept="image/*"
             onChange={handleFileSelect}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            title={`Upload Foto ${urutan}`}
+            title={`Upload Foto ${urutan + 1}`}
           />
         </>
       )}

@@ -23,6 +23,9 @@ model foto_produk {
   paket_id     BigInt?
   paket_produk paket_produk? @relation(fields: [paket_id], references: [id_paket], onDelete: Cascade, onUpdate: NoAction, map: "fk_paket")
   produk       produk?       @relation(fields: [produk_id], references: [id_produk], onDelete: Cascade, onUpdate: NoAction, map: "fk_produk")
+
+  @@unique([produk_id, urutan], name: "unique_produk_urutan")
+  @@unique([paket_id, urutan], name: "unique_paket_urutan")
 }
 
 model kategori {
@@ -119,4 +122,28 @@ model produk_kategori {
   produk      produk   @relation(fields: [produk_id], references: [id_produk], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([produk_id, kategori_id])
+}
+
+model produk_racikan {
+  kode              String   @id @db.VarChar(20)
+  nama              String   @db.VarChar(255)
+  deskripsi_singkat String?
+  deskripsi_lengkap String?
+  kegunaan          String[]
+  kandungan         Json?
+}
+
+model umroh_packages {
+  id                    Int       @id @default(autoincrement())
+  nama_paket            String    @db.VarChar(255)
+  harga                 Float
+  hotel_makkah          String    @db.VarChar(255)
+  hotel_madinah         String    @db.VarChar(255)
+  flight                String    @db.VarChar(255)
+  tanggal_keberangkatan DateTime  @db.Date
+  program_hari          Int
+  termasuk              String?
+  tidak_termasuk        String?
+  tanggal_diperbarui    DateTime? @default(now()) @db.Timestamp(6)
+  link_poster           String?   @db.VarChar(255)
 }

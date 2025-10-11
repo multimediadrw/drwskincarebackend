@@ -21,26 +21,15 @@ function initializeGCS() {
     console.log('Project ID:', process.env.GOOGLE_CLOUD_PROJECT_ID);
     console.log('Bucket Name:', process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
 
-    // Try key file approach first
-    try {
-      storage = new Storage({
-        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-        keyFilename: './gcs-key.json',
-      });
-      console.log('Using key file authentication');
-    } catch (keyFileError) {
-      console.warn('Key file authentication failed, trying environment variables:', keyFileError);
-      
-      // Fallback to environment variables
-      storage = new Storage({
-        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-        credentials: {
-          client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-          private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        },
-      });
-      console.log('Using environment variables authentication');
-    }
+    // Use environment variables directly (skip key file)
+    console.log('Using environment variables for GCS authentication');
+    storage = new Storage({
+      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+      credentials: {
+        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      },
+    });
 
     bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET!);
     console.log('Google Cloud Storage initialized successfully');

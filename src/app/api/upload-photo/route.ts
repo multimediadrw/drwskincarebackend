@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const productId = formData.get('productId') as string;
     const itemType = formData.get('itemType') as string || 'produk'; // 'produk' or 'paket'
-    const urutan = parseInt(formData.get('urutan') as string) || 1;
+    const urutanString = formData.get('urutan') as string;
+    const urutan = urutanString ? parseInt(urutanString) : 0; // Default to 0, not 1
     const altText = formData.get('altText') as string || '';
 
     if (!file) {
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     // Upload to Google Cloud Storage
     const publicUrl = await uploadToGCS(processedBuffer, fileName, actualContentType);
 
-    // Save to database - determine if it's produk or paket
+    // Save to database - use upsert to handle duplicates
     const createData: { url_foto: string; alt_text?: string; urutan?: number; paket_id?: bigint; produk_id?: bigint } = {
       url_foto: publicUrl,
       alt_text: altText,
@@ -82,6 +83,20 @@ export async function POST(request: NextRequest) {
       createData.produk_id = BigInt(productId);
     }
 
+    // First check if photo already exists and delete it
+    const existingPhoto = await prisma.foto_produk.findFirst({
+      where: itemType === 'paket' 
+        ? { paket_id: BigInt(productId), urutan: urutan }
+        : { produk_id: BigInt(productId), urutan: urutan }
+    });
+
+    if (existingPhoto) {
+      await prisma.foto_produk.delete({
+        where: { id_foto: existingPhoto.id_foto }
+      });
+    }
+
+    // Create new photo
     const fotoData = await prisma.foto_produk.create({
       data: createData,
     });

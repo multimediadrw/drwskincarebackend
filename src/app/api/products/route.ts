@@ -83,6 +83,12 @@ export async function GET() {
       id_produk: paket.id_paket.toString(), // Use id_paket as id_produk for consistency
       nama_produk: paket.nama_paket, // Use nama_paket as nama_produk for consistency
       id_paket: paket.id_paket.toString(),
+      foto_produk: paket.foto_produk.map((foto: any) => ({
+        ...foto,
+        id_foto: foto.id_foto.toString(),
+        paket_id: foto.paket_id ? foto.paket_id.toString() : null,
+        produk_id: foto.produk_id ? foto.produk_id.toString() : null
+      })) || [],
       paket_isi: paket.paket_isi.map((isi: any) => ({
         ...isi,
         paket_id: isi.paket_id.toString(),
@@ -93,12 +99,6 @@ export async function GET() {
         }
       })),
       foto_utama: paket.foto_utama,
-      foto_produk: paket.foto_produk?.map((foto: any) => ({
-        ...foto,
-        id_foto: foto.id_foto.toString(),
-        paket_id: foto.paket_id ? foto.paket_id.toString() : null,
-        produk_id: foto.produk_id ? foto.produk_id.toString() : null
-      })) || [],
       produk_bahan_aktif: [],
       produk_detail: null,
       produk_kategori: [],
